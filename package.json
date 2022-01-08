@@ -1,18 +1,20 @@
 {
-  "name": "map-reorder",
+  "name": "@bovenland/waar-we-winkelen",
   "version": "1.0.0",
-  "description": "",
+  "description": "Data for Waar we winkelen",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Bert Spaan",
   "license": "ISC",
   "dependencies": {
+    "@turf/turf": "^6.5.0",
     "d3-hierarchy": "^2.0.0",
     "highland": "^2.13.5",
     "pg": "^8.5.1",
     "proj4": "^2.6.3",
     "ramda": "^0.27.1",
+    "simple-statistics": "^7.4.0",
     "yargs": "^16.2.0"
   }
 }

@@ -1,85 +1,40 @@
+# Available variables:
+#		vacantPercentage
+#		chainPercentage
+#		nearbyShops
+#		nearbyPeople
+#		nearbyBuildings.meanYear
+#		nearbyBuildings.meanArea
+#		nearbyBuildings.count
+
 surroundings:
-	@awk 1 ../shops-analyze/data/shops.ndjson ../shops-analyze/data/boxes.ndjson | \
-		./circle-pack.js -k nearbyShops -d 250 | ./translate-surroundings.js > ./data/surroundings.ndjson
+	@./scripts/surroundings.sh nearbyPeople 1000
+
+provinces:
+	@./scripts/provinces.sh nearbyPeople 1000
+
+prepare:
+	@./scripts/prepare.sh nearbyPeople 1000
 
 geojson:
-	@cat ./data/surroundings.ndjson | \
-		jq -c '.["geometry"] = .geometryPacked | del(.geometryPacked)' | \
-		../ndjson-to-geojson/ndjson-to-geojson.js > \
-		./data/packed.geojson
-
-	@cat ./data/surroundings.ndjson | \
-		jq -c 'del(.geometryPacked)' | \
-		../ndjson-to-geojson/ndjson-to-geojson.js > \
-		./data/map.geojson
-
-gpkg:
-	@ogr2ogr -f "GPKG" ./data/packed.gpkg ./data/packed.geojson
-
-	@ogr2ogr -f "GPKG" ./data/map.gpkg ./data/map.geojson
+	@./scripts/geojson-circles.sh nearbyPeople 1000
+	@./scripts/geojson-world.sh nearbyPeople 1000
 
 mbtiles:
-	@tippecanoe \
-		--layer=buildings -j '{ "*": [ "any", [ "==", "type", "building" ] ] }' \
-		-Z11 -z16 --full-detail=14 \
-		--no-tile-size-limit \
-		--buffer=2 \
-		--simplification=12 \
-		--coalesce --drop-densest-as-needed \
-		-o ./data/packed-buildings.mbtiles -f \
-		--extend-zooms-if-still-dropping ./data/packed.geojson
-
-	@tippecanoe \
-		--layer=roads -j '{ "*": [ "any", [ "==", "type", "road" ] ] }' \
-		-Z13 -z16 --full-detail=14 \
-		--no-tile-size-limit \
-		--buffer=2 \
-		--simplification=12 \
-		--coalesce --drop-densest-as-needed \
-		-o ./data/packed-roads.mbtiles -f \
-		--extend-zooms-if-still-dropping ./data/packed.geojson
-
-	@tippecanoe \
-		--layer=water -j '{ "*": [ "any", [ "==", "type", "water" ] ] }' \
-		-Z13 -z16 --full-detail=14 \
-		--no-tile-size-limit \
-		--buffer=2 \
-		--simplification=12 \
-		--coalesce --drop-densest-as-needed \
-		-o ./data/packed-water.mbtiles -f \
-		--extend-zooms-if-still-dropping ./data/packed.geojson
-
-	@tippecanoe \
-		--layer=circles -j '{ "*": [ "any", [ "==", "type", "circle" ] ] }' \
-		-z16 --full-detail=14 \
-		--no-tile-size-limit \
-		--coalesce --drop-densest-as-needed \
-		-o ./data/packed-circles.mbtiles -f \
-		--extend-zooms-if-still-dropping ./data/packed.geojson
-
-	@tile-join -o ./data/packed.mbtiles -f \
-		--no-tile-size-limit \
-		./data/packed-roads.mbtiles \
-		./data/packed-water.mbtiles \
-		./data/packed-buildings.mbtiles \
-		./data/packed-circles.mbtiles
-
-	@tippecanoe \
-		--layer=circles -j '{ "*": [ "any", [ "==", "type", "circle" ] ] }' \
-		-z16 --full-detail=14 \
-		--no-tile-size-limit \
-		--coalesce --drop-densest-as-needed \
-		-o ./data/map.mbtiles -f \
-		--extend-zooms-if-still-dropping ./data/map.geojson
+	@./scripts/mbtiles-circles.sh nearbyPeople 1000
+	@./scripts/mbtiles-world.sh 1000
 
 extract:
-	@mkdir ./tiles
+	@mkdir -p /Volumes/ExFat/Boven.land/data/map-reorder/tiles
 
-	@mb-util --image_format=pbf ./data/packed.mbtiles ./tiles/packed
-	@mb-util --image_format=pbf ./data/map.mbtiles ./tiles/map
+	@mb-util --image_format=pbf \
+		/Volumes/ExFat/Boven.land/data/map-reorder/circles-nearbyPeople-1000.mbtiles \
+		/Volumes/ExFat/Boven.land/data/map-reorder/tiles/circles
 
-stats:
-	@tippecanoe-decode --stats ./data/packed.mbtiles
+	@mb-util --image_format=pbf \
+		/Volumes/ExFat/Boven.land/data/map-reorder/world-1000-buildings.mbtiles \
+		/Volumes/ExFat/Boven.land/data/map-reorder/tiles/world
 
 s3:
-	@aws s3 sync ./tiles s3://files.boven.land/waar-we-winkelen/tiles --content-encoding gzip
+	@aws s3 sync /Volumes/ExFat/Boven.land/data/map-reorder/tiles \
+		s3://files.boven.land/tiles/waar-we-winkelen/ --content-encoding gzip

@@ -1,16 +1,12 @@
-# Maps, reordered
+# @bovenland/waar-we-winkelen
 
-Steps:
+Scripts to create vector tiles for https://boven.land/hoofdstukken/waar-we-winkelen/kaart.
 
-  1. Compute circle packing and translation parameters;
-  2. Get surrounding features from database and translate;
-  3. Create GeoJSON
-  4. Create vector tiles
+Prerequisites:
 
-Steps 1, 2 and 3 at once:
+  - Analyzed OSM shop data, created by https://github.com/bovenland/shops-analyze.
+  - Running PostgreSQL database on postgis:postgis@localhost:5432/postgis, with OpenStreetMap data. See https://github.com/bovenland.
 
-    ./circle-pack.js < ../shops-analyze/data/shops.ndjson | ./translate-surroundings.js | ../ndjson-to-geojson/ndjson-to-geojson.js > ./data/packed.geojson
+Usage:
 
-## See also
-
-- https://blog.cyclemap.link/2020-02-02-optimizing-vectortiles/
+See [Makefile](Makefile).
